@@ -2,8 +2,8 @@
 # One-shot setup on a fresh Debian 13 (trixie) machine/VM, x86_64, no desktop.
 #
 #   sudo ./setup.sh                          # install everything, no instance yet
-#   sudo ./setup.sh main 1                   # ...and create instance "main" (web login on)
-#   sudo ./setup.sh main 1 --no-login        # ...without a web login
+#   sudo ./setup.sh main 1                   # ...and create instance "main" (no web login)
+#   sudo ./setup.sh main 1 --login           # ...with a web password
 #
 # Safe to re-run (e.g. to update the kiosk files after a git pull).
 set -euo pipefail
@@ -60,6 +60,6 @@ if [[ $# -ge 2 ]]; then
 	add-instance "$@"
 else
 	say "Done"
-	echo "Create your first instance:  sudo add-instance main 1            (asks for a web password)"
-	echo "                         or: sudo add-instance main 1 --no-login (no web password)"
+	echo "Create your first instance:  sudo add-instance main 1           (no web password)"
+	echo "                         or: sudo add-instance main 1 --login   (asks for a web password)"
 fi

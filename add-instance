@@ -2,8 +2,8 @@
 # Create (or update) a RuneLite instance.
 #   sudo add-instance <name> <display-number> [--login | --no-login]
 #
-#   sudo add-instance main 1             → user rl-main, display :1, https://<vm>:8444, web login on
-#   sudo add-instance main 1 --no-login  → same, but no web login (anyone on your network can open it)
+#   sudo add-instance main 1           → user rl-main, display :1, https://<vm>:8444, no web login
+#   sudo add-instance main 1 --login   → same, but the page asks for a web password first
 #
 # Re-running is safe: existing settings, logins and RuneLite data are kept. Passing
 # --login / --no-login on an existing instance switches its web login (restarts it).
@@ -31,13 +31,13 @@ if grep -lq "^DISPLAY_NUM=$num$" /etc/runelite-kiosk/*.env 2>/dev/null &&
 	echo "display :$num is already used by another instance"; exit 1
 fi
 
-# web login: flag wins; otherwise keep the existing instance's setting; new instances default to on
+# web login: flag wins; otherwise keep the existing instance's setting; new instances default to off
 old_login=""
 [[ -f $env_file ]] && old_login=$(sed -n 's/^WEB_LOGIN=//p' "$env_file")
 case $mode in
 	--login) login=yes ;;
 	--no-login) login=no ;;
-	*) login=${old_login:-yes} ;;
+	*) login=${old_login:-no} ;;
 esac
 
 # does the web password file need (re)writing? decided up front so a refusal changes nothing
@@ -48,7 +48,7 @@ elif [[ $login == yes && $old_login == no ]]; then
 	need_password=yes   # switching login on: replace the random password with a real one
 fi
 if [[ $need_password == yes && $login == yes && ! -t 0 ]]; then
-	echo "need a terminal to ask for the web password (use ssh -t), or pass --no-login"; exit 1
+	echo "need a terminal to ask for the web password (use ssh -t), or leave out --login"; exit 1
 fi
 
 # 1. Linux user (ssl-cert: read the KasmVNC TLS key)

@@ -20,4 +20,4 @@ systemctl daemon-reload
 # let the Bolt sandbox run bolt-capture / run-client (read-only)
 flatpak override --system --filesystem=/opt/runelite-kiosk:ro com.adamcake.Bolt
 
-echo "kiosk files installed. add an instance with: sudo add-instance <name> <display-number> [--no-login]"
+echo "kiosk files installed. add an instance with: sudo add-instance <name> <display-number> [--login]"

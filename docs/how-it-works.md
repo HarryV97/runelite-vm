@@ -103,9 +103,9 @@ there:
 - self-signed `ssl-cert` snakeoil certificate (instance users are in the `ssl-cert` group)
 - `max_frame_rate: 30`, `session_type: shared` (several viewers at once)
 - `command_line.prompt: false`, so it never asks interactive questions under systemd
-- Web login: KasmVNC refuses to start without a user in `~/.kasmpasswd`, so `--no-login`
-  instances get one with a random password, and the service adds `-DisableBasicAuth 1`
-  (via `KASM_EXTRA_ARGS` in the instance's `.env`).
+- Web login: off by default. KasmVNC refuses to start without a user in `~/.kasmpasswd`,
+  so instances without `--login` get one with a random password, and the service adds
+  `-DisableBasicAuth 1` (via `KASM_EXTRA_ARGS` in the instance's `.env`).
 
 ## Files on the VM
 

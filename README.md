@@ -88,16 +88,18 @@ sudo add-instance main 1
 
 - `main` is a name you choose (lowercase letters/digits). `1` is the display number, and
   the instance's web address uses port **8443 + that number** → `https://<vm-ip>:8444`.
-- It asks you to pick a **web password**. The web username is **`runelite`**. This only
-  protects the stream page. It's *not* your Jagex password.
-- Only you on a trusted home network? `sudo add-instance main 1 --no-login` skips the web
-  password. Then anyone who can reach the VM can open it and play your logged-in character.
+- There's **no web password** by default: the link opens straight into the game. That
+  means anyone who can reach the VM on your network can open it and play your logged-in
+  character. Fine for a home network.
+- Want a password on the page anyway? Use `sudo add-instance main 1 --login`. It asks you to
+  pick one, and the web username is **`runelite`**. This only protects the stream page. It's
+  *not* your Jagex password.
 
 ## 4. First login
 
 1. Open **`https://<vm-ip>:8444`** in Chrome/Edge/Firefox. The certificate is self-signed,
    so accept the warning once (*Advanced → Proceed*).
-2. Enter the web login (unless you used `--no-login`).
+2. If you used `--login`, enter the web username/password.
 3. **Bolt** is already showing. Accept its notice → log in to your Jagex account → pick
    your **Character** → **Play**.
 4. Bolt closes and RuneLite starts. The first start takes ~30 s while it downloads.
@@ -137,7 +139,7 @@ its own taskbar icon.
 
 ```bash
 sudo add-instance alt 2              # → https://<vm-ip>:8445
-sudo add-instance third 3 --no-login # → https://<vm-ip>:8446
+sudo add-instance third 3 --login    # → https://<vm-ip>:8446, with a web password
 ```
 
 Each instance is a separate Linux user (`rl-<name>`), so logins, RuneLite settings and
@@ -146,8 +148,8 @@ plugins never mix. Check Jagex's current rules on playing several accounts at on
 ### Change or remove things
 
 ```bash
-sudo add-instance main 1 --no-login   # turn the web login off for an instance (restarts it)
-sudo add-instance main 1 --login      # turn it back on (asks for a new password, restarts it)
+sudo add-instance main 1 --login      # turn a web password on (asks for one, restarts it)
+sudo add-instance main 1 --no-login   # turn it off again (restarts it)
 sudo -u rl-main -H kasmvncpasswd -u runelite -w   # change an instance's web password
 sudo remove-instance alt              # delete an instance and ALL its data (asks to confirm)
 ```
@@ -184,7 +186,7 @@ Logs: `/home/rl-<name>/.vnc/supervisor.log` (the restart loop), `/home/rl-<name>
   keeps its own saved login (`…/bolt-launcher/creds`), and the kiosk saves the current game
   session (`…/data/kiosk/session`, mode 600). Both are as sensitive as a password. They
   stay on the VM, and instance home folders are private (`700`).
-- `--no-login` instances can be opened (and played) by anything that can reach the VM.
+- Instances without `--login` (the default) can be opened, and played, by anything that can reach the VM.
 
 ## How it works
 
