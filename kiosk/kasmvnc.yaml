@@ -1,0 +1,32 @@
+# Installed to /etc/kasmvnc/kasmvnc.yaml — shared by every instance.
+# Defaults: /usr/share/kasmvnc/kasmvnc_defaults.yaml
+
+desktop:
+  resolution:
+    width: 1280
+    height: 800
+  # the browser window size drives the X display size
+  allow_resize: true
+  pixel_depth: 24
+
+network:
+  interface: 0.0.0.0
+  # auto = 8443 + display number (:1 → 8444, :2 → 8445)
+  websocket_port: auto
+  use_ipv6: false
+  ssl:
+    # self-signed snakeoil cert; instance users are in the ssl-cert group
+    require_ssl: true
+
+user_session:
+  idle_timeout: never
+  # several viewers at once are fine (all see and control the same screen)
+  session_type: shared
+
+encoding:
+  # OSRS ticks every 0.6 s; 30 fps is plenty and halves encoding work
+  max_frame_rate: 30
+
+command_line:
+  # never prompt for a desktop environment or user on start (runs under systemd)
+  prompt: false

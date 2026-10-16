@@ -1,0 +1,18 @@
+{
+  "use_dark_theme": true,
+  "rs_plugin_loader": false,
+  "close_after_launch": true,
+  "check_announcements": false,
+  "fetch_rss_feeds": false,
+  "flatpak_rich_presence": false,
+  "runelite_use_custom_jar": false,
+  "use_custom_rs_config_uri": false,
+  "discard_expired_sessions": true,
+  "rs_launch_command": null,
+  "osrs_launch_command": null,
+  "runelite_custom_jar": null,
+  "runelite_launch_command": "/opt/runelite-kiosk/bolt-capture %command%",
+  "hdos_launch_command": null,
+  "selected": { "game": "osrs", "client": "RuneLite", "user_id": null },
+  "userDetails": {}
+}

@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Bolt "launch command" for RuneLite: /opt/runelite-kiosk/bolt-capture %command%
+#
+# Runs INSIDE the Bolt Flatpak sandbox when you press Play. Instead of starting the game,
+# it saves the Jagex session (JX_* env vars from Bolt) and the java command, then exits.
+# The supervisor sees the new session and (re)starts RuneLite with it, so pressing Play
+# in Bolt = switch account/character, and reboots can relaunch without Bolt.
+set -euo pipefail
+
+dir="${XDG_DATA_HOME:?}/kiosk"   # host: ~/.var/app/com.adamcake.Bolt/data/kiosk
+mkdir -p "$dir"
+umask 077                         # the session file is a login: owner-only
+
+tmp="$dir/session.tmp"
+{
+	printf 'export JX_SESSION_ID=%q\n' "${JX_SESSION_ID:-}"
+	printf 'export JX_CHARACTER_ID=%q\n' "${JX_CHARACTER_ID:-}"
+	printf 'export JX_DISPLAY_NAME=%q\n' "${JX_DISPLAY_NAME:-}"
+	printf 'KIOSK_HOME=%q\n' "$HOME"
+	printf 'KIOSK_CWD=%q\n' "$PWD"
+	printf 'KIOSK_CMD=('; printf '%q ' "$@"; printf ')\n'
+} >"$tmp"
+mv -f "$tmp" "$dir/session"
+
+echo "[kiosk] saved session for ${JX_DISPLAY_NAME:-unknown character}"

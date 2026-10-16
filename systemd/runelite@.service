@@ -1,0 +1,25 @@
+# Installed to /etc/systemd/system/runelite@.service
+# One unit per instance: runelite@main, runelite@alt, ... (created by add-instance)
+# Per-instance settings live in /etc/runelite-kiosk/<name>.env
+
+[Unit]
+Description=RuneLite kiosk instance %i
+After=network-online.target systemd-user-sessions.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=rl-%i
+EnvironmentFile=/etc/runelite-kiosk/%i.env
+WorkingDirectory=~
+# clear a stale display/lock left by a crash
+ExecStartPre=-/usr/bin/vncserver -kill :${DISPLAY_NUM}
+# KASM_EXTRA_ARGS (from the .env) is "-DisableBasicAuth 1" for instances created with
+# --no-login, empty otherwise. Unbraced $VAR so an empty value adds no argument.
+ExecStart=/usr/bin/vncserver :${DISPLAY_NUM} -fg -autokill -xstartup /opt/runelite-kiosk/xstartup $KASM_EXTRA_ARGS
+ExecStop=/usr/bin/vncserver -kill :${DISPLAY_NUM}
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

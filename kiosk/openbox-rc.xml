@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Installed to /opt/runelite-kiosk/openbox-rc.xml, shared by every instance. -->
+<openbox_config xmlns="http://openbox.org/3.4/rc">
+  <focus>
+    <focusNew>yes</focusNew>
+    <followMouse>no</followMouse>
+  </focus>
+  <placement>
+    <policy>Smart</policy>
+    <center>yes</center>
+  </placement>
+  <desktops>
+    <number>1</number>
+  </desktops>
+  <margins><top>0</top><bottom>0</bottom><left>0</left><right>0</right></margins>
+
+  <keyboard>
+    <!-- account switcher: open Bolt on top of RuneLite -->
+    <keybind key="C-A-b">
+      <action name="Execute"><command>flatpak run com.adamcake.Bolt</command></action>
+    </keybind>
+  </keyboard>
+
+  <mouse>
+    <!-- only focus-on-click; no root menu, no window dragging -->
+    <context name="Client">
+      <mousebind button="Left" action="Press"><action name="Focus"/><action name="Raise"/></mousebind>
+      <mousebind button="Middle" action="Press"><action name="Focus"/><action name="Raise"/></mousebind>
+      <mousebind button="Right" action="Press"><action name="Focus"/><action name="Raise"/></mousebind>
+    </context>
+  </mouse>
+
+  <applications>
+    <!-- main windows (RuneLite, Bolt) fill the display and refit when it is resized;
+         dialogs keep their own size -->
+    <application type="normal">
+      <decor>no</decor>
+      <maximized>yes</maximized>
+    </application>
+    <application type="dialog">
+      <decor>no</decor>
+    </application>
+  </applications>
+</openbox_config>

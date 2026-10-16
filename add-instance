@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+# Create (or update) a RuneLite instance.
+#   sudo add-instance <name> <display-number> [--login | --no-login]
+#
+#   sudo add-instance main 1             → user rl-main, display :1, https://<vm>:8444, web login on
+#   sudo add-instance main 1 --no-login  → same, but no web login (anyone on your network can open it)
+#
+# Re-running is safe: existing settings, logins and RuneLite data are kept. Passing
+# --login / --no-login on an existing instance switches its web login (restarts it).
+set -euo pipefail
+
+usage() { echo "usage: add-instance <name> <display-number> [--login | --no-login]"; exit 1; }
+name=${1:-}; num=${2:-}; mode=${3:-}
+[[ -n $name && -n $num ]] || usage
+[[ -z $mode || $mode == --login || $mode == --no-login ]] || usage
+[[ $name =~ ^[a-z0-9]+$ ]] || { echo "name: lowercase letters/digits only"; exit 1; }
+[[ $num =~ ^[0-9]+$ && $num -ge 1 ]] || { echo "display-number: 1 or higher"; exit 1; }
+[[ $EUID -eq 0 ]] || { echo "run with sudo"; exit 1; }
+[[ -d /opt/runelite-kiosk ]] || { echo "not installed yet: run sudo ./setup.sh first"; exit 1; }
+
+user="rl-$name"
+port=$((8443 + num))
+env_file="/etc/runelite-kiosk/$name.env"
+web_user="runelite"
+
+if [[ -f $env_file ]] && ! grep -q "^DISPLAY_NUM=$num$" "$env_file"; then
+	echo "instance $name already exists with a different display"; exit 1
+fi
+if grep -lq "^DISPLAY_NUM=$num$" /etc/runelite-kiosk/*.env 2>/dev/null &&
+	! grep -q "^DISPLAY_NUM=$num$" "$env_file" 2>/dev/null; then
+	echo "display :$num is already used by another instance"; exit 1
+fi
+
+# web login: flag wins; otherwise keep the existing instance's setting; new instances default to on
+old_login=""
+[[ -f $env_file ]] && old_login=$(sed -n 's/^WEB_LOGIN=//p' "$env_file")
+case $mode in
+	--login) login=yes ;;
+	--no-login) login=no ;;
+	*) login=${old_login:-yes} ;;
+esac
+
+# does the web password file need (re)writing? decided up front so a refusal changes nothing
+need_password=no
+if [[ ! -s /home/$user/.kasmpasswd ]]; then
+	need_password=yes
+elif [[ $login == yes && $old_login == no ]]; then
+	need_password=yes   # switching login on: replace the random password with a real one
+fi
+if [[ $need_password == yes && $login == yes && ! -t 0 ]]; then
+	echo "need a terminal to ask for the web password (use ssh -t), or pass --no-login"; exit 1
+fi
+
+# 1. Linux user (ssl-cert: read the KasmVNC TLS key)
+id "$user" >/dev/null 2>&1 || useradd --create-home --shell /bin/bash --groups ssl-cert "$user"
+chmod 700 "/home/$user"
+uid=$(id -u "$user")
+
+# 2. lingering gives the user /run/user/<uid> and a session D-Bus without logging in
+loginctl enable-linger "$user"
+
+# 3. per-instance settings for runelite@.service
+extra=""
+[[ $login == no ]] && extra="-DisableBasicAuth 1"
+cat >"$env_file" <<EOF
+DISPLAY_NUM=$num
+XDG_RUNTIME_DIR=/run/user/$uid
+DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/$uid/bus
+WEB_LOGIN=$login
+KASM_EXTRA_ARGS=$extra
+EOF
+
+# 4. Bolt settings: RuneLite selected, launch command = bolt-capture, close Bolt after Play
+bolt_cfg="/home/$user/.var/app/com.adamcake.Bolt/config/bolt-launcher"
+if [[ ! -f $bolt_cfg/launcher.json ]]; then
+	sudo -u "$user" -H install -d -m 700 "$bolt_cfg"
+	sudo -u "$user" -H install -m 600 /opt/runelite-kiosk/bolt-launcher.json "$bolt_cfg/launcher.json"
+fi
+
+# 5. starting RuneLite settings (GPU off, FPS cap), imported by RuneLite on first start
+rl_dir="/home/$user/.var/app/com.adamcake.Bolt/data/bolt-launcher/.runelite"
+if [[ ! -d $rl_dir/profiles2 && ! -f $rl_dir/settings.properties ]]; then
+	sudo -u "$user" -H install -d -m 755 "$rl_dir"
+	sudo -u "$user" -H install -m 644 /opt/runelite-kiosk/runelite-settings.properties "$rl_dir/settings.properties"
+fi
+
+# 6. KasmVNC web login. vncserver won't start without a user in ~/.kasmpasswd, so a
+#    --no-login instance gets one with a random, unused password.
+sudo -u "$user" -H install -d -m 700 "/home/$user/.vnc"
+if [[ $need_password == yes ]]; then
+	if [[ $login == yes ]]; then
+		echo "Choose the web password for instance '$name' (web username: $web_user):"
+		sudo -u "$user" -H kasmvncpasswd -u "$web_user" -w
+	else
+		pw=$(head -c 18 /dev/urandom | base64)
+		printf '%s\n%s\n' "$pw" "$pw" | sudo -u "$user" -H kasmvncpasswd -u "$web_user" -w >/dev/null 2>&1
+	fi
+fi
+
+# 7. start now and on boot (restart if the login setting changed on a running instance)
+systemctl enable --now "runelite@$name"
+if [[ -n $old_login && $old_login != "$login" ]]; then
+	systemctl restart "runelite@$name"
+fi
+
+echo
+echo "instance '$name' → https://$(hostname -I | awk '{print $1}'):$port"
+if [[ $login == yes ]]; then
+	echo "web login: user '$web_user' + the password you chose"
+else
+	echo "web login: off (anyone who can reach this machine can open it)"
+fi
+echo "first time: log in through Bolt (opens automatically), pick a character and press Play."

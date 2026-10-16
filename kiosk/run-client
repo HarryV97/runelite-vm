@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Runs INSIDE the Bolt Flatpak sandbox (started by the supervisor):
+#   flatpak run --command=/opt/runelite-kiosk/run-client com.adamcake.Bolt
+# Replays the java command Bolt would have run, with the saved Jagex session.
+set -euo pipefail
+
+session="${XDG_DATA_HOME:?}/kiosk/session"
+# shellcheck source=/dev/null
+source "$session"
+
+export HOME="$KIOSK_HOME"
+cd "$KIOSK_CWD"
+exec "${KIOSK_CMD[@]}"

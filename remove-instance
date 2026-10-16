@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Stop and delete an instance, including its Linux user, saved login and RuneLite settings.
+#   sudo remove-instance <name>
+set -euo pipefail
+
+name=${1:?usage: remove-instance <name>}
+user="rl-$name"
+
+read -rp "Delete instance '$name' and ALL its data (/home/$user)? Type the name to confirm: " answer
+[[ $answer == "$name" ]] || { echo "aborted"; exit 1; }
+
+systemctl disable --now "runelite@$name" 2>/dev/null || true
+loginctl disable-linger "$user" 2>/dev/null || true
+pkill -u "$user" 2>/dev/null || true
+sleep 1
+userdel --remove "$user" 2>/dev/null || true
+rm -f "/etc/runelite-kiosk/$name.env"
+echo "removed instance '$name'"

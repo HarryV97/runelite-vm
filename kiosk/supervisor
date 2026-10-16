@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Keeps RuneLite running in this instance's X session (started from xstartup).
+#
+# - No saved session yet → open Bolt so you can log in.
+# - Session saved        → start RuneLite with it; restart it whenever it exits/crashes.
+# - Session changes (Play pressed in Bolt) → restart RuneLite as the new character.
+
+session="$HOME/.var/app/com.adamcake.Bolt/data/kiosk/session"
+started_mtime=""
+bolt_pid=""
+
+log() { echo "$(date '+%F %T') $*"; }
+client_running() { pgrep -u "$USER" -x java >/dev/null; }
+# the Bolt we started (flatpak run execs into bwrap, so the pid lives as long as Bolt),
+# or one opened with the hotkey; the first start of a new instance can take a while
+bolt_running() {
+	{ [[ -n $bolt_pid ]] && kill -0 "$bolt_pid" 2>/dev/null; } || pgrep -u "$USER" -x bolt >/dev/null
+}
+
+log "supervisor started on display $DISPLAY"
+while true; do
+	mtime=$(stat -c %Y "$session" 2>/dev/null || true)
+
+	if [[ -z $mtime ]]; then
+		if ! bolt_running; then
+			log "no saved session, opening Bolt"
+			flatpak run com.adamcake.Bolt >/dev/null 2>&1 &
+			bolt_pid=$!
+		fi
+		sleep 5
+		continue
+	fi
+
+	if client_running && [[ $mtime != "$started_mtime" ]]; then
+		log "session changed, restarting RuneLite"
+		pkill -u "$USER" -x java
+		sleep 3
+		pkill -9 -u "$USER" -x java 2>/dev/null
+	fi
+
+	if ! client_running; then
+		log "starting RuneLite"
+		started_mtime=$mtime
+		flatpak run --command=/opt/runelite-kiosk/run-client com.adamcake.Bolt &
+		sleep 15   # give it time to come up (also rate-limits crash loops)
+		continue
+	fi
+
+	sleep 2
+done

@@ -1,0 +1,7 @@
+#!/bin/sh
+# X session for one instance: started by KasmVNC (runelite@<name>.service).
+# No desktop, just Openbox (keeps windows borderless and maximized) and the supervisor.
+
+xsetroot -solid '#1b1b1b'
+/opt/runelite-kiosk/supervisor >>"$HOME/.vnc/supervisor.log" 2>&1 &
+exec openbox --config-file /opt/runelite-kiosk/openbox-rc.xml
