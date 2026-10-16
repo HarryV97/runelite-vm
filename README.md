@@ -55,10 +55,26 @@ SSH into the VM (`ssh <you>@<vm-ip>`), then:
 
 ```bash
 sudo apt install -y git
-git clone <THIS-REPO-URL> runelite-vm
+git clone https://github.com/HarryV97/runelite-vm.git runelite-vm
 cd runelite-vm
 sudo ./setup.sh
 ```
+
+<details>
+<summary>Repo is private? How to clone it</summary>
+
+GitHub doesn't accept account passwords for `git clone`. Use one of these:
+
+- **Access token** (you must be a collaborator): GitHub → Settings → Developer settings →
+  Personal access tokens → *Fine-grained* → only this repo, **Contents: Read-only**. Run the
+  `git clone` above. When it asks, use your GitHub username and **paste the token as the
+  password**. Don't put the token in the URL.
+- **Deploy key** (no GitHub account needed): on the VM run
+  `ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519` and `cat ~/.ssh/id_ed25519.pub`. The repo
+  owner adds that line under repo Settings → Deploy keys (read-only). Then
+  `git clone git@github.com:HarryV97/runelite-vm.git runelite-vm`.
+
+</details>
 
 `setup.sh` installs everything: KasmVNC (the browser streaming server), Openbox, Flatpak,
 the Bolt launcher, and the kiosk scripts. It downloads about 1.5 GB and takes a few minutes.
